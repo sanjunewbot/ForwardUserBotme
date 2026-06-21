@@ -28,9 +28,11 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
             msgs = await app.get_messages(chat_id, list(range(c, batch_end + 1)))
             if not isinstance(msgs, list):
                 msgs = [msgs]
+
             for msg in msgs:
                 if not msg:
                     continue
+
                 if msg.text and 'text' in not_allowed:
                     continue
                 elif msg.photo and 'photo' in not_allowed:
@@ -45,9 +47,11 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
                     continue
                 elif msg.document and 'file' in not_allowed:
                     continue
+
                 await msg.copy(fwd_id, caption=caption)
                 s += 1
                 await asyncio.sleep(1.025)
+
             c = batch_end + 1
 
         except FloodWait as e:
@@ -69,8 +73,8 @@ async def allow_handler(_, m):
             txt += f'`.{type_}` ❌\n'
         else:
             txt += f'`.{type_}` ✅\n'
-    await m.edit(txt)
-    
+    await m.reply(txt)
+
 
 @app.on_message(filters.command(['text', 'photo', 'video', 'gif', 'audio', 'voice', 'file'], '.') & filters.me)
 async def uf_handler(_, m):
@@ -81,7 +85,7 @@ async def uf_handler(_, m):
     else:
         not_allowed.append(type_)
         txt = f'Disabled {type_} ❌'
-    await m.edit(txt)
+    await m.reply(txt)
 
 
 @app.on_message(filters.command("id", '.') & filters.me)
@@ -90,36 +94,39 @@ async def id_handler(_, m):
         txt = f'Chat ID: `{m.chat.id}`\nMsg ID: `{m.reply_to_message.id}`'
     else:
         txt = f'Chat ID: `{m.chat.id}`'
-    await m.edit(txt)
+    await m.reply(txt)
 
 
 @app.on_message(filters.command("caption", '.') & filters.me)
 async def caption_handler(_, m):
     global caption
     spl = m.text.split()
+
     if len(spl) > 1:
         caption = " ".join(spl[1:])
+        await m.reply(f"Caption was set to '{caption}'")
     else:
         if caption:
-            return await m.edit(f"Caption was set to '{caption}'")
+            await m.reply(f"Caption was set to '{caption}'")
         else:
-            return await m.edit(f"No Caption.")
-    await m.edit(f"Caption was set to '{caption}'")
+            await m.reply("No Caption.")
 
 
 @app.on_message(filters.command("dcaption", '.') & filters.me)
 async def dcaption_handler(_, m):
     global caption
     caption = ''
-    await m.edit("Caption removed.")
+    await m.reply("Caption removed.")
 
 
 @app.on_message(filters.command("logs", '.') & filters.me)
 async def logs_handler(_, m):
     if not logs:
-        return await m.edit("No Logs Stored.")
+        return await m.reply("No Logs Stored.")
+
     with open("logs.txt", "w") as e:
-        e.write("/n/n".join(logs))
+        e.write("\n\n".join(logs))
+
     await m.reply_document("logs.txt")
     os.remove("logs.txt")
 
@@ -129,39 +136,44 @@ async def f_handler(_, m):
     global task, s, f
 
     if task:
-        return await m.edit("A process is already running, use /cancel to cancel.") 
+        return await m.reply("A process is already running.")
+
+    spl = m.text.split()
+
+    if len(spl) < 4:
+        return await m.reply(
+            "Usage:\n.f <from_chat_id> <start_id> <end_id>"
+        )
 
     try:
-        spl = m.text.split()
         chat_id = int(spl[1])
-        st_id, en_id = int(spl[2]), int(spl[3])
+        st_id = int(spl[2])
+        en_id = int(spl[3])
         fwd_id = m.chat.id
-    except:
-        traceback.print_exc()
-        return await m.edit('.f from_chat_id start end')
+    except ValueError:
+        return await m.reply("Invalid IDs.")
 
-    ok = await m.edit("forwarding...\n\nVisit the hosted URL for progress.")
+    await m.reply("Forwarding started...\nVisit the hosted URL for progress.")
 
     s, f = 0, 0
     task = asyncio.create_task(forward(chat_id, fwd_id, st_id, en_id))
 
     try:
         await task
-    except:
+    except Exception:
         pass
     finally:
         task = None
-        txt = f"Forwarded\n\n{s=}\n{f=}"
+        await m.reply(f"Forwarding Completed\n\nSuccess: {s}\nFailed: {f}")
         s, f = 0, 0
-        await ok.edit(txt)
 
-    
+
 @app.on_message(filters.command('cancel', '.') & filters.me)
 async def cancel_handler(_, m):
     if not task:
-        return await m.edit("No Task is going.")
+        return await m.reply("No Task is going.")
     task.cancel()
-    await m.edit("Cancelled.")
+    await m.reply("Cancelled.")
 
 
 @flask_app.route('/')
@@ -172,5 +184,10 @@ def index():
 
 
 port = int(os.getenv("PORT", 8000))
-threading.Thread(target=flask_app.run, kwargs={'host': '0.0.0.0', 'port': port}, daemon=True).start()
+threading.Thread(
+    target=flask_app.run,
+    kwargs={'host': '0.0.0.0', 'port': port},
+    daemon=True
+).start()
+
 app.run(print("Started."))
