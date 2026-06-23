@@ -6,6 +6,7 @@ import traceback
 import os
 from flask import Flask
 import threading
+import time
 
 flask_app = Flask(__name__)
 
@@ -15,6 +16,8 @@ logs = []
 task = None
 s, f = 0, 0
 caption = ''
+
+paused = False
 
 not_allowed = []
 
@@ -28,7 +31,8 @@ start_time = time.time()
 
 c = st
 while c <= en:
-
+while paused:
+await asyncio.sleep(5)
     # Auto Cooldown
     if time.time() - start_time >= WORK_TIME:
         logs.append(
@@ -191,6 +195,30 @@ async def f_handler(_, m):
         task = None
         await m.reply(f"Forwarding Completed\n\nSuccess: {s}\nFailed: {f}")
         s, f = 0, 0
+        
+@app.on_message(filters.command('pause', '.') & filters.me)
+async def pause_handler(_, m):
+global paused
+paused = True
+await m.reply("Forwarding Paused.")
+
+@app.on_message(filters.command('resume', '.') & filters.me)
+async def resume_handler(_, m):
+global paused
+paused = False
+    await m.reply("Forwarding Resumed.")
+
+@app.on_message(filters.command('status', '.') & filters.me)
+async def status_handler(_, m):
+global paused, task
+
+if not task:
+    return await m.reply("No task running.")
+
+if paused:
+    await m.reply("Status: PAUSED")
+else:
+    await m.reply("Status: RUNNING")
 
 
 @app.on_message(filters.command('cancel', '.') & filters.me)
