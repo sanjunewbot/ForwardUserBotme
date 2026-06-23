@@ -243,4 +243,5 @@ threading.Thread(
     daemon=True
 ).start()
 
-app.run(print("Started."))
+print("Started.")
+app.run()
