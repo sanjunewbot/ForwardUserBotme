@@ -210,7 +210,7 @@ async def pause_handler(_, m):
 async def resume_handler(_, m):
     global paused
 
-paused = False
+    paused = False
     await m.reply("Forwarding Resumed.")
 
 @app.on_message(filters.command('status', '.') & filters.me)
@@ -230,8 +230,8 @@ async def cancel_handler(_, m):
 if not task:
 return await m.reply("No Task is going.")
 
-task.cancel()
-await m.reply("Cancelled.")
+    task.cancel()
+    await m.reply("Cancelled.")
 
 @flask_app.route('/')
 def index():
