@@ -19,49 +19,74 @@ caption = ''
 not_allowed = []
 
 async def forward(chat_id: int, fwd_id: int, st: int, en: int):
-    global s, f
+global s, f
 
-    c = st
-    while c <= en:
-        try:
-            batch_end = min(c + 199, en)
-            msgs = await app.get_messages(chat_id, list(range(c, batch_end + 1)))
-            if not isinstance(msgs, list):
-                msgs = [msgs]
+WORK_TIME = 15 * 60      # 15 minutes
+COOL_TIME = 60 * 60      # 1 hour
 
-            for msg in msgs:
-                if not msg:
-                    continue
+start_time = time.time()
 
-                if msg.text and 'text' in not_allowed:
-                    continue
-                elif msg.photo and 'photo' in not_allowed:
-                    continue
-                elif msg.video and 'video' in not_allowed:
-                    continue
-                elif msg.animation and 'gif' in not_allowed:
-                    continue
-                elif msg.audio and 'audio' in not_allowed:
-                    continue
-                elif msg.voice and 'voice' in not_allowed:
-                    continue
-                elif msg.document and 'file' in not_allowed:
-                    continue
+c = st
+while c <= en:
 
-                await msg.copy(fwd_id, caption=caption)
-                s += 1
-                await asyncio.sleep(1.025)
+    # Auto Cooldown
+    if time.time() - start_time >= WORK_TIME:
+        logs.append(
+            f"Cooldown started for {COOL_TIME // 60} minutes"
+        )
 
-            c = batch_end + 1
+        await asyncio.sleep(COOL_TIME)
 
-        except FloodWait as e:
-            t = e.value if isinstance(e.value, int) else 30
-            await asyncio.sleep(t)
-            logs.append(f"Sleeping for {t}s.")
+        logs.append("Cooldown finished. Restarting...")
+        start_time = time.time()
 
-        except Exception:
-            logs.append(traceback.format_exc())
-            f += 1
+    try:
+        batch_end = min(c + 199, en)
+
+        msgs = await app.get_messages(
+            chat_id,
+            list(range(c, batch_end + 1))
+        )
+
+        if not isinstance(msgs, list):
+            msgs = [msgs]
+
+        for msg in msgs:
+
+            if not msg:
+                continue
+
+            if msg.text and 'text' in not_allowed:
+                continue
+            elif msg.photo and 'photo' in not_allowed:
+                continue
+            elif msg.video and 'video' in not_allowed:
+                continue
+            elif msg.animation and 'gif' in not_allowed:
+                continue
+            elif msg.audio and 'audio' in not_allowed:
+                continue
+            elif msg.voice and 'voice' in not_allowed:
+                continue
+            elif msg.document and 'file' in not_allowed:
+                continue
+
+            await msg.copy(fwd_id, caption=caption)
+
+            s += 1
+
+            await asyncio.sleep(1.5)
+
+        c = batch_end + 1
+
+    except FloodWait as e:
+        t = e.value if isinstance(e.value, int) else 30
+        logs.append(f"FloodWait: sleeping {t}s")
+        await asyncio.sleep(t)
+
+    except Exception:
+        logs.append(traceback.format_exc())
+        f += 1
 
 
 @app.on_message(filters.command("a", '.') & filters.me)
