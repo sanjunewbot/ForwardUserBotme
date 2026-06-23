@@ -208,14 +208,14 @@ async def pause_handler(_, m):
 
 @app.on_message(filters.command('resume', '.') & filters.me)
 async def resume_handler(_, m):
-global paused
+    global paused
 
 paused = False
-await m.reply("Forwarding Resumed.")
+    await m.reply("Forwarding Resumed.")
 
 @app.on_message(filters.command('status', '.') & filters.me)
 async def status_handler(_, m):
-global paused, task
+    global paused, task
 
 if not task:
     return await m.reply("No task running.")
