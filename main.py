@@ -24,17 +24,17 @@ not_allowed = []
 async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
     
-WORK_TIME = 15 * 60      # 15 minutes
-COOL_TIME = 60 * 60      # 1 hour
+    WORK_TIME = 15 * 60      # 15 minutes
+    COOL_TIME = 60 * 60      # 1 hour
 
-start_time = time.time()
+    start_time = time.time()
 
-c = st
+    c = st
 
-while c <= en:
+    while c <= en:
 
-    while paused:
-        await asyncio.sleep(5)
+        while paused:
+                await asyncio.sleep(5)
         
     # Auto Cooldown
     if time.time() - start_time >= WORK_TIME:
