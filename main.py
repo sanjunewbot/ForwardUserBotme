@@ -22,17 +22,20 @@ paused = False
 not_allowed = []
 
 async def forward(chat_id: int, fwd_id: int, st: int, en: int):
-global s, f
-
+    global s, f
+    
 WORK_TIME = 15 * 60      # 15 minutes
 COOL_TIME = 60 * 60      # 1 hour
 
 start_time = time.time()
 
 c = st
+
 while c <= en:
-while paused:
-await asyncio.sleep(5)
+
+    while paused:
+        await asyncio.sleep(5)
+        
     # Auto Cooldown
     if time.time() - start_time >= WORK_TIME:
         logs.append(
@@ -198,9 +201,10 @@ async def f_handler(_, m):
         
 @app.on_message(filters.command('pause', '.') & filters.me)
 async def pause_handler(_, m):
-global paused
-paused = True
-await m.reply("Forwarding Paused.")
+    global paused
+
+    paused = True
+    await m.reply("Forwarding Paused.")
 
 @app.on_message(filters.command('resume', '.') & filters.me)
 async def resume_handler(_, m):
