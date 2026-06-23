@@ -16,84 +16,76 @@ logs = []
 task = None
 s, f = 0, 0
 caption = ''
-
 paused = False
-
 not_allowed = []
+
 
 async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
-    
-WORK_TIME = 15 * 60      # 15 minutes
+
+    WORK_TIME = 15 * 60      # 15 minutes
     COOL_TIME = 60 * 60      # 1 hour
 
     start_time = time.time()
-
     c = st
 
     while c <= en:
 
-            while paused:
-                await asyncio.sleep(5)
-        
-    # Auto Cooldown
-    if time.time() - start_time >= WORK_TIME:
-        logs.append(
-            f"Cooldown started for {COOL_TIME // 60} minutes"
-        )
+        while paused:
+            await asyncio.sleep(5)
 
-        await asyncio.sleep(COOL_TIME)
+        if time.time() - start_time >= WORK_TIME:
+            logs.append(f"Cooldown started for {COOL_TIME // 60} minutes")
+            await asyncio.sleep(COOL_TIME)
+            logs.append("Cooldown finished. Restarting...")
+            start_time = time.time()
 
-        logs.append("Cooldown finished. Restarting...")
-        start_time = time.time()
+        try:
+            batch_end = min(c + 199, en)
 
-    try:
-        batch_end = min(c + 199, en)
+            msgs = await app.get_messages(
+                chat_id,
+                list(range(c, batch_end + 1))
+            )
 
-        msgs = await app.get_messages(
-            chat_id,
-            list(range(c, batch_end + 1))
-        )
+            if not isinstance(msgs, list):
+                msgs = [msgs]
 
-        if not isinstance(msgs, list):
-            msgs = [msgs]
+            for msg in msgs:
 
-        for msg in msgs:
+                if not msg:
+                    continue
 
-            if not msg:
-                continue
+                if msg.text and 'text' in not_allowed:
+                    continue
+                elif msg.photo and 'photo' in not_allowed:
+                    continue
+                elif msg.video and 'video' in not_allowed:
+                    continue
+                elif msg.animation and 'gif' in not_allowed:
+                    continue
+                elif msg.audio and 'audio' in not_allowed:
+                    continue
+                elif msg.voice and 'voice' in not_allowed:
+                    continue
+                elif msg.document and 'file' in not_allowed:
+                    continue
 
-            if msg.text and 'text' in not_allowed:
-                continue
-            elif msg.photo and 'photo' in not_allowed:
-                continue
-            elif msg.video and 'video' in not_allowed:
-                continue
-            elif msg.animation and 'gif' in not_allowed:
-                continue
-            elif msg.audio and 'audio' in not_allowed:
-                continue
-            elif msg.voice and 'voice' in not_allowed:
-                continue
-            elif msg.document and 'file' in not_allowed:
-                continue
+                await msg.copy(fwd_id, caption=caption)
 
-            await msg.copy(fwd_id, caption=caption)
+                s += 1
+                await asyncio.sleep(1.5)
 
-            s += 1
+            c = batch_end + 1
 
-            await asyncio.sleep(1.5)
+        except FloodWait as e:
+            t = e.value if isinstance(e.value, int) else 30
+            logs.append(f"FloodWait: sleeping {t}s")
+            await asyncio.sleep(t)
 
-        c = batch_end + 1
-
-    except FloodWait as e:
-        t = e.value if isinstance(e.value, int) else 30
-        logs.append(f"FloodWait: sleeping {t}s")
-        await asyncio.sleep(t)
-
-    except Exception:
-        logs.append(traceback.format_exc())
-        f += 1
+        except Exception:
+            logs.append(traceback.format_exc())
+            f += 1
 
 
 @app.on_message(filters.command("a", '.') & filters.me)
@@ -138,10 +130,7 @@ async def caption_handler(_, m):
         caption = " ".join(spl[1:])
         await m.reply(f"Caption was set to '{caption}'")
     else:
-        if caption:
-            await m.reply(f"Caption was set to '{caption}'")
-        else:
-            await m.reply("No Caption.")
+        await m.reply(f"Caption: {caption}" if caption else "No Caption.")
 
 
 @app.on_message(filters.command("dcaption", '.') & filters.me)
@@ -156,7 +145,7 @@ async def logs_handler(_, m):
     if not logs:
         return await m.reply("No Logs Stored.")
 
-    with open("logs.txt", "w") as e:
+    with open("logs.txt", "w", encoding="utf-8") as e:
         e.write("\n\n".join(logs))
 
     await m.reply_document("logs.txt")
@@ -173,9 +162,7 @@ async def f_handler(_, m):
     spl = m.text.split()
 
     if len(spl) < 4:
-        return await m.reply(
-            "Usage:\n.f <from_chat_id> <start_id> <end_id>"
-        )
+        return await m.reply("Usage:\n.f <from_chat_id> <start_id> <end_id>")
 
     try:
         chat_id = int(spl[1])
@@ -185,33 +172,32 @@ async def f_handler(_, m):
     except ValueError:
         return await m.reply("Invalid IDs.")
 
-    await m.reply("Forwarding started...\nVisit the hosted URL for progress.")
+    await m.reply("Forwarding started...")
 
     s, f = 0, 0
     task = asyncio.create_task(forward(chat_id, fwd_id, st_id, en_id))
 
     try:
         await task
-    except Exception:
-        pass
     finally:
         task = None
         await m.reply(f"Forwarding Completed\n\nSuccess: {s}\nFailed: {f}")
         s, f = 0, 0
-        
+
+
 @app.on_message(filters.command('pause', '.') & filters.me)
 async def pause_handler(_, m):
     global paused
-
     paused = True
     await m.reply("Forwarding Paused.")
+
 
 @app.on_message(filters.command('resume', '.') & filters.me)
 async def resume_handler(_, m):
     global paused
-
     paused = False
     await m.reply("Forwarding Resumed.")
+
 
 @app.on_message(filters.command('status', '.') & filters.me)
 async def status_handler(_, m):
@@ -220,18 +206,20 @@ async def status_handler(_, m):
     if not task:
         return await m.reply("No task running.")
 
-    if paused:
-        await m.reply("Status: PAUSED")
-    else:
-        await m.reply("Status: RUNNING")
+    await m.reply("Status: PAUSED" if paused else "Status: RUNNING")
+
 
 @app.on_message(filters.command('cancel', '.') & filters.me)
 async def cancel_handler(_, m):
+    global task
+
     if not task:
         return await m.reply("No Task is going.")
 
     task.cancel()
+    task = None
     await m.reply("Cancelled.")
+
 
 @flask_app.route('/')
 def index():
