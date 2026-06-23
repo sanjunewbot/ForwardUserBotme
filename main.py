@@ -21,7 +21,7 @@ paused = False
 
 not_allowed = []
 
-    async def forward(chat_id: int, fwd_id: int, st: int, en: int):
+async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
     
     WORK_TIME = 15 * 60      # 15 minutes
