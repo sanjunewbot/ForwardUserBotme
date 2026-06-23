@@ -209,8 +209,9 @@ async def pause_handler(_, m):
 @app.on_message(filters.command('resume', '.') & filters.me)
 async def resume_handler(_, m):
 global paused
+
 paused = False
-    await m.reply("Forwarding Resumed.")
+await m.reply("Forwarding Resumed.")
 
 @app.on_message(filters.command('status', '.') & filters.me)
 async def status_handler(_, m):
@@ -224,14 +225,13 @@ if paused:
 else:
     await m.reply("Status: RUNNING")
 
-
 @app.on_message(filters.command('cancel', '.') & filters.me)
 async def cancel_handler(_, m):
-    if not task:
-        return await m.reply("No Task is going.")
-    task.cancel()
-    await m.reply("Cancelled.")
+if not task:
+return await m.reply("No Task is going.")
 
+task.cancel()
+await m.reply("Cancelled.")
 
 @flask_app.route('/')
 def index():
