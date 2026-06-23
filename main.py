@@ -21,7 +21,7 @@ paused = False
 
 not_allowed = []
 
-async def forward(chat_id: int, fwd_id: int, st: int, en: int):
+    async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
     
     WORK_TIME = 15 * 60      # 15 minutes
@@ -31,9 +31,9 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
 
     c = st
 
-    while c <= en:
+        while c <= en:
 
-        while paused:
+            while paused:
                 await asyncio.sleep(5)
         
     # Auto Cooldown
