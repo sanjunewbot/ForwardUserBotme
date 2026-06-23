@@ -217,13 +217,13 @@ async def resume_handler(_, m):
 async def status_handler(_, m):
     global paused, task
 
-if not task:
-    return await m.reply("No task running.")
+    if not task:
+        return await m.reply("No task running.")
 
-if paused:
-    await m.reply("Status: PAUSED")
-else:
-    await m.reply("Status: RUNNING")
+    if paused:
+        await m.reply("Status: PAUSED")
+    else:
+        await m.reply("Status: RUNNING")
 
 @app.on_message(filters.command('cancel', '.') & filters.me)
 async def cancel_handler(_, m):
