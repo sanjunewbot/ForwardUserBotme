@@ -227,8 +227,8 @@ else:
 
 @app.on_message(filters.command('cancel', '.') & filters.me)
 async def cancel_handler(_, m):
-if not task:
-return await m.reply("No Task is going.")
+    if not task:
+        return await m.reply("No Task is going.")
 
     task.cancel()
     await m.reply("Cancelled.")
