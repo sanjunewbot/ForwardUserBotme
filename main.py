@@ -24,7 +24,7 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
 
     WORK_TIME = 30 * 60      # 15 minutes
-    COOL_TIME = 50 * 60      # 1 hour
+    COOL_TIME = 1 * 60      # 1 hour
 
     start_time = time.time()
     c = st
@@ -35,7 +35,7 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
             await asyncio.sleep(5)
 
         if time.time() - start_time >= WORK_TIME:
-            logs.append(f"Cooldown started for {COOL_TIME // 50} minutes")
+            logs.append(f"Cooldown started for {COOL_TIME // 1} minutes")
             await asyncio.sleep(COOL_TIME)
             logs.append("Cooldown finished. Restarting...")
             start_time = time.time()
