@@ -24,7 +24,7 @@ async def forward(chat_id: int, fwd_id: int, st: int, en: int):
     global s, f
 
     WORK_TIME = 30 * 60      # 15 minutes
-    COOL_TIME = 1 * 60      # 1 hour
+    COOL_TIME = 20 * 60      # 1 hour
 
     start_time = time.time()
     c = st
